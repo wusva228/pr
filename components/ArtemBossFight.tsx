@@ -37,7 +37,7 @@ export const ArtemBossFight: React.FC<ArtemBossFightProps> = ({ problem, correct
 
     return (
         <div className="fixed inset-0 bg-red-900/80 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in p-4">
-            <div className="bg-gradient-to-br from-red-300 to-orange-300 p-6 sm:p-8 rounded-3xl shadow-2xl border-4 border-white/50 max-w-md w-full mx-auto text-center panel-3d" style={{transform: 'rotateX(0deg) rotateY(0deg)'}}>
+            <div className="bg-gradient-to-br from-red-300 to-orange-300 p-6 sm:p-8 rounded-3xl shadow-2xl border-4 border-white/50 max-w-md w-full mx-auto text-center panel-3d">
                 <img src="https://i.imgur.com/bGrafax.png" alt="Артём" className="w-28 h-28 mx-auto mb-4 rounded-full border-4 border-red-500 shadow-lg" style={{filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))'}}/>
                 <h2 className="text-3xl font-black text-red-800 drop-shadow-md">Артём здесь!</h2>
                 <p className="text-lg text-red-700 font-semibold mt-2">Он украл твою находку: {stolenItem?.emoji} {stolenItem?.name}!</p>

@@ -412,7 +412,7 @@ const App: React.FC = () => {
         <div className={`w-full h-full flex flex-col items-center ${getShakeClass()}`}>
           <Header/>
           {(gameStatus === 'playing' || gameStatus === 'digging' || gameStatus === 'muzzled') && (
-            <div className="w-full flex-grow flex flex-col lg:flex-row gap-4 items-start justify-center mt-0 px-2 pb-4">
+            <div className="w-full flex-grow flex flex-col lg:flex-row gap-4 items-start justify-center mt-0 px-2 pb-4 min-h-0">
               <Scoreboard 
                 foundItems={foundTrash} 
                 totalTrashCount={trashToFind} 

@@ -22,7 +22,7 @@ export const FindStepanGame: React.FC<FindStepanGameProps> = ({ grid, onSearch, 
                     <p className="text-lg sm:text-xl text-amber-800">Попыток осталось: <span className="font-bold text-lime-700 text-2xl">{attemptsLeft}</span></p>
                 </div>
             </div>
-            <div className="relative w-full aspect-square max-w-lg sm:max-w-xl md:max-w-2xl transform-style-preserve-3d">
+            <div className="relative w-full aspect-square max-w-lg sm:max-w-xl md:max-w-2xl">
                 <div 
                   className="relative w-full h-full bg-lime-600/70 p-2 sm:p-3 rounded-3xl shadow-2xl border-4 border-lime-700/50 panel-3d"
                   style={{
@@ -30,7 +30,6 @@ export const FindStepanGame: React.FC<FindStepanGameProps> = ({ grid, onSearch, 
                     gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
                     gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
                     gap: '0.5rem',
-                    transform: 'rotateX(25deg) scale(0.9)',
                   }}
                 >
                     {grid.map((spot, index) => (

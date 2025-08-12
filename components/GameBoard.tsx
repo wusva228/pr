@@ -17,7 +17,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, onDig, stephanPositi
   const gridSize = Math.sqrt(grid.length);
 
   return (
-    <div className="relative w-full aspect-square max-w-full sm:max-w-xl md:max-w-2xl transform-style-preserve-3d">
+    <div className="relative w-full aspect-square max-w-full sm:max-w-xl md:max-w-2xl">
         {isDigging && <div className="absolute inset-0 z-30" />}
         <div 
           className="relative w-full h-full bg-lime-600/70 p-2 sm:p-3 rounded-3xl shadow-2xl border-4 border-lime-700/50 panel-3d"
@@ -26,7 +26,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, onDig, stephanPositi
             gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
             gridTemplateRows: `repeat(${gridSize}, minmax(0, 1fr))`,
             gap: '0.5rem',
-            transform: 'rotateX(35deg) scale(0.9)',
           }}
         >
           {grid.map((spot, index) => (

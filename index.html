@@ -25,26 +25,19 @@
         border-bottom: 8px solid #166534; /* green-800 */
         transition: all 0.1s ease-in-out;
         text-shadow: 0 2px 2px rgba(0,0,0,0.2);
-        transform: translateZ(10px);
     }
     .btn-3d:hover {
-        transform: translateY(-2px) translateZ(12px);
+        transform: translateY(-2px);
         border-bottom-width: 10px;
     }
     .btn-3d:active, .btn-3d.disabled {
-        transform: translateY(2px) translateZ(8px);
+        transform: translateY(2px);
         border-bottom-width: 6px;
         filter: brightness(0.9);
     }
     .panel-3d {
-        transform: rotateX(10deg) rotateY(-6deg) scale(1);
         box-shadow: 0 20px 40px -8px rgba(0,0,0,0.4), 0 10px 20px rgba(0,0,0,0.25), inset 0 2px 1px rgba(255,255,255,0.4);
-        transition: transform 0.3s ease;
-        transform-style: preserve-3d;
     }
-     .panel-3d:hover {
-        transform: rotateX(7deg) rotateY(-4deg) scale(1.02);
-     }
      .particle {
         position: absolute;
         background: #a16207; /* amber-700 */
