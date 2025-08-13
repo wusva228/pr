@@ -35,7 +35,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ foundItems, totalTrashCo
       <p className="text-base sm:text-lg font-bold mb-3 text-lime-800">
         Собрано мусора: {foundItems.length} / {totalTrashCount}
       </p>
-      <div className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-60 overflow-y-auto pr-2 mb-4">
+      <div className="space-y-2 sm:space-y-3 max-h-40 sm:max-h-56 lg:max-h-[30vh] overflow-y-auto pr-2 mb-4">
         {foundItems.length > 0 ? (
           foundItems.map(item => <FoundItem key={`${item.id}-${Math.random()}`} item={item} />)
         ) : (

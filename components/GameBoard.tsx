@@ -11,9 +11,10 @@ interface GameBoardProps {
   isMuzzled: boolean;
   equippedClothes: Set<UpgradeId>;
   digTime: number;
+  level: number;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({ grid, onDig, stephanPosition, isDigging, isMuzzled, equippedClothes, digTime }) => {
+export const GameBoard: React.FC<GameBoardProps> = ({ grid, onDig, stephanPosition, isDigging, isMuzzled, equippedClothes, digTime, level }) => {
   const gridSize = Math.sqrt(grid.length);
 
   return (
@@ -43,6 +44,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ grid, onDig, stephanPositi
             isDigging={isDigging} 
             gridSize={gridSize}
             equippedClothes={equippedClothes}
+            level={level}
           />
         </div>
     </div>

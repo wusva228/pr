@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
+
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GameBoard } from './components/GameBoard';
 import { Scoreboard } from './components/Scoreboard';
 import { LevelEndModal } from './components/LevelEndModal';
@@ -9,8 +10,12 @@ import { MuzzleEffect } from './components/MuzzleEffect';
 import { ArtemBossFight } from './components/ArtemBossFight';
 import { FindStepanGame } from './components/FindStepanGame';
 import { FindStepanEndModal } from './components/FindStepanEndModal';
-import { type GridSpot, type Item, type GameStatus, type UpgradeId, SavedGameState, GameMode, FindStepanSpot } from './types';
-import { LEVEL_CONFIGS, ITEMS, UPGRADES, BASE_DIG_TIME, MUZZLE_DURATION, BOSS_CHANCE, SAVE_GAME_KEY, FIND_STEPAN_GRID_SIZE, FIND_STEPAN_ATTEMPTS, ANASTASIA_MAX_MOOD, MOOD_BOOST_VALUE } from './constants';
+import { PrisonEscapeGame } from './components/PrisonEscapeGame';
+import { PrisonEscapeEndModal } from './components/PrisonEscapeEndModal';
+import { FarmGame } from './components/FarmGame';
+import { MusicToggle } from './components/MusicToggle';
+import { type GridSpot, type Item, type GameStatus, type UpgradeId, SavedGameState, GameMode, FindStepanSpot, PrisonCell, FarmPlotState } from './types';
+import { LEVEL_CONFIGS, ITEMS, UPGRADES, BASE_DIG_TIME, MUZZLE_DURATION, BOSS_CHANCE, SAVE_GAME_KEY, FIND_STEPAN_GRID_SIZE, FIND_STEPAN_ATTEMPTS, ANASTASIA_MAX_MOOD, MOOD_BOOST_VALUE, MOOD_DECAY_PER_LEVEL, PRISON_GRID_SIZE, PRISON_INITIAL_ENERGY, PRISON_WALL_STRENGTH, BACKGROUND_MUSIC_URL, PRISON_MOVE_COST, PRISON_BREAK_COST, PRISON_TRAP_PENALTY, PRISON_WATER_BONUS, INITIAL_FARM_PLOTS_COUNT, SEEDS } from './constants';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   return [...array].sort(() => Math.random() - 0.5);
@@ -30,7 +35,6 @@ const triggerVibration = (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
     console.error("Haptic feedback error:", e);
   }
 };
-
 
 const setupGridForLevel = (level: number): { grid: GridSpot[], trashToFind: number, config: typeof LEVEL_CONFIGS[0] } => {
   const config = LEVEL_CONFIGS[level - 1] || LEVEL_CONFIGS[LEVEL_CONFIGS.length - 1];
@@ -75,6 +79,9 @@ const App: React.FC = () => {
   const [userName, setUserName] = useState<string | null>(null);
   const [anastasiaMood, setAnastasiaMood] = useState(ANASTASIA_MAX_MOOD);
   const [shake, setShake] = useState<'none' | 'gentle' | 'intense'>('none');
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [preStoreStatus, setPreStoreStatus] = useState<GameStatus>('start_screen');
+  const musicRef = useRef<HTMLAudioElement | null>(null);
 
   // Digging game state
   const [grid, setGrid] = useState<GridSpot[]>([]);
@@ -89,6 +96,32 @@ const App: React.FC = () => {
   const [findStepanGrid, setFindStepanGrid] = useState<FindStepanSpot[]>([]);
   const [attemptsLeft, setAttemptsLeft] = useState(FIND_STEPAN_ATTEMPTS);
   const [isStepanFound, setIsStepanFound] = useState(false);
+  
+  // Prison Escape game state
+  const [prisonGrid, setPrisonGrid] = useState<PrisonCell[]>([]);
+  const [prisonStepanPosition, setPrisonStepanPosition] = useState(-1);
+  const [prisonEnergy, setPrisonEnergy] = useState(PRISON_INITIAL_ENERGY);
+  const [isEscaped, setIsEscaped] = useState(false);
+
+  // Farm game state
+  const [farmPlots, setFarmPlots] = useState<FarmPlotState[]>([]);
+
+  const loadGameData = useCallback(() => {
+    const savedDataRaw = localStorage.getItem(SAVE_GAME_KEY);
+    if (savedDataRaw) {
+        const savedData: SavedGameState = JSON.parse(savedDataRaw);
+        setLevel(savedData.level);
+        setCoins(savedData.coins);
+        setPurchasedUpgrades(new Set(savedData.purchasedUpgrades));
+        setEquippedClothes(new Set(savedData.equippedClothes));
+        setAnastasiaMood(savedData.anastasiaMood ?? ANASTASIA_MAX_MOOD);
+        setFarmPlots(savedData.farmPlots ?? Array.from({length: INITIAL_FARM_PLOTS_COUNT}, (_, i) => ({ id: i, seedId: null, plantTime: null })));
+        setHasSaveData(true);
+    } else {
+        setFarmPlots(Array.from({length: INITIAL_FARM_PLOTS_COUNT}, (_, i) => ({ id: i, seedId: null, plantTime: null })));
+        setHasSaveData(false);
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -102,31 +135,31 @@ const App: React.FC = () => {
     } catch (e) {
       console.error("Telegram WebApp script error:", e);
     }
-  }, []);
+
+    loadGameData();
+
+    musicRef.current = document.getElementById('background-music') as HTMLAudioElement;
+    if (musicRef.current) {
+        musicRef.current.src = BACKGROUND_MUSIC_URL;
+    }
+  }, [loadGameData]);
 
   const saveGame = useCallback(() => {
-    if (gameMode !== 'digging_game') return;
     const gameState: SavedGameState = {
       level,
       coins,
       purchasedUpgrades: Array.from(purchasedUpgrades),
       equippedClothes: Array.from(equippedClothes),
       anastasiaMood,
+      farmPlots,
     };
     localStorage.setItem(SAVE_GAME_KEY, JSON.stringify(gameState));
     setHasSaveData(true);
-  }, [level, coins, purchasedUpgrades, equippedClothes, anastasiaMood, gameMode]);
+  }, [level, coins, purchasedUpgrades, equippedClothes, anastasiaMood, farmPlots]);
   
   useEffect(() => {
     saveGame();
   }, [saveGame]);
-
-  useEffect(() => {
-    const savedData = localStorage.getItem(SAVE_GAME_KEY);
-    if (savedData) {
-      setHasSaveData(true);
-    }
-  }, []);
   
   useEffect(() => {
     if (shake === 'intense') {
@@ -183,6 +216,55 @@ const App: React.FC = () => {
     setGameMode('find_stepan');
     setGameStatus('find_stepan_playing');
   };
+  
+  const handleStartPrisonEscapeGame = () => {
+    triggerVibration('soft');
+    const gridSize = PRISON_GRID_SIZE;
+    const totalSpots = gridSize * gridSize;
+    const exitPosition = Math.floor(Math.random() * (gridSize - 2)) + 1; // Not in corners
+    
+    let newGrid = Array.from({ length: totalSpots }, (_, i): PrisonCell => {
+        const isBoundary = i < gridSize || i >= totalSpots - gridSize || i % gridSize === 0 || i % gridSize === gridSize - 1;
+        if (i === exitPosition) {
+            return { id: i, type: 'exit', strength: 0 };
+        }
+        if (isBoundary) {
+            return { id: i, type: 'wall', strength: PRISON_WALL_STRENGTH };
+        }
+        return { id: i, type: 'floor', strength: 0 };
+    });
+
+    const startRow = gridSize - 2;
+    const startCol = Math.floor(gridSize / 2);
+    const startPos = startRow * gridSize + startCol;
+
+    // Place traps and water
+    const floorCells = newGrid.map((c, i) => ({...c, index: i})).filter(c => c.type === 'floor' && c.index !== startPos);
+    const shuffledFloorCells = shuffleArray(floorCells);
+    const trapCount = 3;
+    const waterCount = 2;
+
+    shuffledFloorCells.slice(0, trapCount).forEach(cell => {
+        newGrid[cell.index].type = 'trap';
+    });
+
+    shuffledFloorCells.slice(trapCount, trapCount + waterCount).forEach(cell => {
+        newGrid[cell.index].type = 'water';
+    });
+
+    setPrisonGrid(newGrid);
+    setPrisonEnergy(PRISON_INITIAL_ENERGY);
+    setIsEscaped(false);
+    setPrisonStepanPosition(startPos);
+    setGameMode('prison_escape');
+    setGameStatus('prison_escape_playing');
+  };
+
+  const handleStartFarmGame = () => {
+    triggerVibration('soft');
+    setGameMode('farm');
+    setGameStatus('farm_playing');
+  }
 
   const handleSearchSpot = (index: number) => {
     if (attemptsLeft <= 0 || findStepanGrid[index].isSearched) return;
@@ -227,93 +309,109 @@ const App: React.FC = () => {
   
   const handleDig = (index: number) => {
     if (gameStatus !== 'playing' || grid[index].isDug) return;
-    
+
     triggerVibration('medium');
     setGameStatus('digging');
     setShake('gentle');
     setStephanPosition(index);
 
-    const digTime = purchasedUpgrades.has('FASTER_DIG') 
-        ? BASE_DIG_TIME * (1 - (UPGRADES.FASTER_DIG.value ?? 0)) 
-        : BASE_DIG_TIME;
+    const digTime = purchasedUpgrades.has('FASTER_DIG')
+      ? BASE_DIG_TIME * (1 - (UPGRADES.FASTER_DIG.value ?? 0))
+      : BASE_DIG_TIME;
 
     setTimeout(() => {
       const newGrid = [...grid];
       const spot = newGrid[index];
       spot.isDug = true;
-      let newFoundItems = foundTrash;
+
+      let newFoundItems = [...foundTrash];
 
       if (spot.item) {
         triggerVibration('light');
-        if(spot.item.isTrap && spot.item.trapType === 'MUZZLE') {
+        if (spot.item.isTrap && spot.item.trapType === 'MUZZLE') {
+          setGrid(newGrid);
+          setShake('none');
           triggerMuzzle();
+          return;
         } else if (spot.item.isTrash) {
-          newFoundItems = [...foundTrash, spot.item];
+          newFoundItems.push(spot.item);
           setFoundTrash(newFoundItems);
 
-          if(purchasedUpgrades.has('LUCKY_CHARM') && Math.random() < 0.2) {
-              const bonusCoins = Math.floor(Math.random() * 5) + 1;
-              setCoins(c => c + bonusCoins);
-              setBonusMessage(`+${bonusCoins} 🪙 Талисман сработал!`);
-              setTimeout(() => setBonusMessage(null), 2000);
+          if (purchasedUpgrades.has('LUCKY_CHARM') && Math.random() < 0.2) {
+            const bonusCoins = Math.floor(Math.random() * 5) + 1;
+            setCoins(c => c + bonusCoins);
+            setBonusMessage(`+${bonusCoins} 🪙 Талисман сработал!`);
+            setTimeout(() => setBonusMessage(null), 2000);
           }
         }
       }
-      
+
       setGrid(newGrid);
       setShake('none');
-      
+
       if (newFoundItems.length === trashToFind) {
         setLastLevelFoundTrash(newFoundItems);
         setGameStatus('level_end');
-      } else {
-        if (spot.item?.isTrash && Math.random() < BOSS_CHANCE) {
-            triggerArtemBossFight();
-        } else {
-            setGameStatus('playing');
-        }
+        return;
       }
+      
+      if (spot.item?.isTrash && Math.random() < BOSS_CHANCE) {
+        triggerArtemBossFight();
+        return;
+      }
+
+      setGameStatus('playing');
     }, digTime);
   };
   
   const handleStartNewGame = () => {
     triggerVibration('soft');
+    if (!isMusicPlaying) {
+      toggleMusic();
+    }
     localStorage.removeItem(SAVE_GAME_KEY);
-    setHasSaveData(false);
     setLevel(1);
     setCoins(0);
     setPurchasedUpgrades(new Set());
     setEquippedClothes(new Set());
     setAnastasiaMood(ANASTASIA_MAX_MOOD);
+    setFarmPlots(Array.from({length: INITIAL_FARM_PLOTS_COUNT}, (_, i) => ({ id: i, seedId: null, plantTime: null })));
+    setHasSaveData(false);
     startDiggingGame(1);
   }
 
   const handleContinueGame = () => {
     triggerVibration('soft');
-    const savedDataRaw = localStorage.getItem(SAVE_GAME_KEY);
-    if(savedDataRaw) {
-        const savedData: SavedGameState = JSON.parse(savedDataRaw);
-        setLevel(savedData.level);
-        setCoins(savedData.coins);
-        setPurchasedUpgrades(new Set(savedData.purchasedUpgrades));
-        setEquippedClothes(new Set(savedData.equippedClothes));
-        setAnastasiaMood(savedData.anastasiaMood ?? ANASTASIA_MAX_MOOD);
-        startDiggingGame(savedData.level);
+    if (!isMusicPlaying) {
+      toggleMusic();
     }
+    loadGameData();
+    startDiggingGame(level);
   }
 
   const proceedToNextLevel = () => {
     triggerVibration('soft');
     const earnings = lastLevelFoundTrash.reduce((sum, item) => sum + item.coinValue, 0);
     setCoins(prevCoins => prevCoins + earnings);
+    setAnastasiaMood(m => Math.max(0, m - MOOD_DECAY_PER_LEVEL));
     const nextLevel = level + 1;
     setLevel(nextLevel);
     startDiggingGame(nextLevel);
   }
   
-  const handleGoToStore = () => {
+  const handleGoToStore = (fromStatus?: GameStatus) => {
     triggerVibration('soft');
+    setPreStoreStatus(fromStatus || gameStatus);
     setGameStatus('store');
+  }
+
+  const handleCloseStore = () => {
+    triggerVibration('soft');
+    if (preStoreStatus === 'level_end') {
+        proceedToNextLevel();
+    } else {
+        handleReturnToMenu();
+    }
   }
   
   const handleBuyUpgrade = (upgradeId: UpgradeId) => {
@@ -362,6 +460,104 @@ const App: React.FC = () => {
     setBossFight(null);
     setGameStatus('playing');
   }
+
+  const handlePrisonAction = (index: number) => {
+    if (prisonEnergy <= 0 || index === prisonStepanPosition) return;
+
+    const gridSize = PRISON_GRID_SIZE;
+    const stephanRow = Math.floor(prisonStepanPosition / gridSize);
+    const stephanCol = prisonStepanPosition % gridSize;
+    const targetRow = Math.floor(index / gridSize);
+    const targetCol = index % gridSize;
+    const isAdjacent = Math.abs(stephanRow - targetRow) + Math.abs(stephanCol - targetCol) === 1;
+
+    if (!isAdjacent) return;
+
+    let newEnergy = prisonEnergy;
+    const newGrid = [...prisonGrid];
+    const targetCell = { ...newGrid[index] };
+    let didMove = false;
+
+    // Logic for different cell types
+    if (targetCell.type === 'floor' || targetCell.type === 'trap' || targetCell.type === 'water') {
+        newEnergy -= PRISON_MOVE_COST; // ALWAYS subtract move cost first
+        if (targetCell.type === 'trap') {
+            newEnergy -= PRISON_TRAP_PENALTY;
+            triggerVibration('warning');
+        } else if (targetCell.type === 'water') {
+            newEnergy += PRISON_WATER_BONUS;
+            targetCell.type = 'floor'; // consume
+            triggerVibration('success');
+        } else {
+            triggerVibration('soft');
+        }
+        didMove = true;
+    } else if (targetCell.type === 'wall') {
+        newEnergy -= PRISON_BREAK_COST;
+        targetCell.strength -= 1;
+        if (targetCell.strength <= 0) {
+            targetCell.type = 'floor';
+            triggerVibration('heavy');
+        } else {
+            triggerVibration('medium');
+        }
+    } else if (targetCell.type === 'exit') {
+        newEnergy -= PRISON_BREAK_COST;
+        setIsEscaped(true);
+        setGameStatus('prison_escape_end');
+        triggerVibration('success');
+    }
+    
+    newGrid[index] = targetCell;
+    setPrisonGrid(newGrid);
+    
+    if (didMove) {
+        setPrisonStepanPosition(index);
+    }
+
+    setPrisonEnergy(newEnergy);
+    if (newEnergy <= 0 && gameStatus !== 'prison_escape_end') {
+      setIsEscaped(false);
+      setGameStatus('prison_escape_end');
+      triggerVibration('error');
+    }
+  };
+  
+  const handlePlantSeed = (plotId: number, seedId: string) => {
+    const seed = SEEDS.find(s => s.id === seedId);
+    if (!seed || coins < seed.cost) return;
+
+    setCoins(c => c - seed.cost);
+    const newPlots = farmPlots.map(p => p.id === plotId ? { ...p, seedId, plantTime: Date.now() } : p);
+    setFarmPlots(newPlots);
+    triggerVibration('light');
+  };
+
+  const handleHarvest = (plotId: number) => {
+    const plot = farmPlots.find(p => p.id === plotId);
+    if (!plot || !plot.seedId) return;
+
+    const seed = SEEDS.find(s => s.id === plot.seedId);
+    if (!seed) return;
+
+    setCoins(c => c + seed.revenue);
+    const newPlots = farmPlots.map(p => p.id === plotId ? { ...p, seedId: null, plantTime: null } : p);
+    setFarmPlots(newPlots);
+    triggerVibration('success');
+    setBonusMessage(`+${seed.revenue} 🪙 Урожай собран!`);
+    setTimeout(() => setBonusMessage(null), 2000);
+  };
+
+  const toggleMusic = () => {
+    if (musicRef.current) {
+        if (isMusicPlaying) {
+            musicRef.current.pause();
+        } else {
+            musicRef.current.play().catch(e => console.error("Music play error:", e));
+        }
+        setIsMusicPlaying(!isMusicPlaying);
+    }
+  };
   
   const getShakeClass = () => {
     switch(shake) {
@@ -377,8 +573,12 @@ const App: React.FC = () => {
         onStartNewGame={handleStartNewGame} 
         onContinueGame={handleContinueGame} 
         onStartFindStepanGame={handleStartFindStepanGame}
+        onStartPrisonEscapeGame={handleStartPrisonEscapeGame}
+        onStartFarmGame={handleStartFarmGame}
+        onGoToStore={() => handleGoToStore('start_screen')}
         hasSaveData={hasSaveData} 
         userName={userName}
+        coins={coins}
       />;
     }
     
@@ -402,8 +602,39 @@ const App: React.FC = () => {
         </>
       );
     }
+    
+    if (gameMode === 'prison_escape') {
+        return (
+            <>
+                <PrisonEscapeGame
+                    grid={prisonGrid}
+                    onPrisonAction={handlePrisonAction}
+                    energy={prisonEnergy}
+                    onReturnToMenu={handleReturnToMenu}
+                    stepanPosition={prisonStepanPosition}
+                />
+                {gameStatus === 'prison_escape_end' && (
+                    <PrisonEscapeEndModal
+                        isEscaped={isEscaped}
+                        onPlayAgain={handleStartPrisonEscapeGame}
+                        onReturnToMenu={handleReturnToMenu}
+                    />
+                )}
+            </>
+        )
+    }
 
-    if (gameMode === 'digging_game') {
+    if (gameMode === 'farm') {
+        return <FarmGame
+            plots={farmPlots}
+            coins={coins}
+            onPlant={handlePlantSeed}
+            onHarvest={handleHarvest}
+            onReturnToMenu={handleReturnToMenu}
+        />
+    }
+
+    if (gameMode === 'digging_game' || gameStatus === 'store') {
        const digTime = purchasedUpgrades.has('FASTER_DIG') 
         ? BASE_DIG_TIME * (1 - (UPGRADES.FASTER_DIG.value ?? 0)) 
         : BASE_DIG_TIME;
@@ -420,7 +651,7 @@ const App: React.FC = () => {
                 coins={coins}
                 anastasiaMood={anastasiaMood}
                />
-              <div className="flex-grow w-full flex flex-col items-center justify-center">
+              <div className="flex-grow w-full flex flex-col items-center justify-center min-h-0">
                  <GameBoard 
                     grid={grid} 
                     onDig={handleDig} 
@@ -429,6 +660,7 @@ const App: React.FC = () => {
                     isMuzzled={gameStatus === 'muzzled'}
                     equippedClothes={equippedClothes}
                     digTime={digTime}
+                    level={level}
                   />
               </div>
             </div>
@@ -439,7 +671,7 @@ const App: React.FC = () => {
                 level={level}
                 foundItems={lastLevelFoundTrash}
                 onNextLevel={proceedToNextLevel}
-                onGoToStore={handleGoToStore}
+                onGoToStore={() => handleGoToStore('level_end')}
             />
           )}
           
@@ -450,8 +682,9 @@ const App: React.FC = () => {
                 purchasedUpgrades={purchasedUpgrades}
                 equippedClothes={equippedClothes}
                 onBuyUpgrade={handleBuyUpgrade}
-                onContinue={proceedToNextLevel}
+                onClose={handleCloseStore}
                 anastasiaMood={anastasiaMood}
+                closeButtonText={preStoreStatus === 'level_end' ? 'Продолжить' : 'Назад'}
             />
           )}
 
@@ -473,6 +706,7 @@ const App: React.FC = () => {
 
   return (
     <main className="min-h-screen h-screen text-amber-900 flex flex-col items-center p-2 sm:p-4 selection:bg-lime-300 overflow-hidden">
+      <MusicToggle isPlaying={isMusicPlaying} onToggle={toggleMusic} />
       {bonusMessage && (
         <div className="fixed top-24 z-50 bg-yellow-400 text-yellow-900 font-bold px-4 py-2 rounded-full animate-bounce">
             {bonusMessage}

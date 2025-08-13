@@ -87,6 +87,26 @@
         80% { transform: translate(-3px, -3px) rotate(2deg); }
         90% { transform: translate(5px, 6px) rotate(0deg); }
       }
+      .sparkle {
+        position: absolute;
+        background-color: white;
+        border-radius: 50%;
+        animation: sparkle-anim 1.5s infinite;
+        opacity: 0;
+      }
+      @keyframes sparkle-anim {
+        0% { transform: scale(0); opacity: 0.5; }
+        50% { opacity: 1; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+      .music-btn-on, .music-btn-off {
+        animation: fade-in 0.5s;
+      }
+      @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes glow {
+        0%, 100% { box-shadow: 0 0 8px #fef08a, 0 0 12px #facc15; }
+        50% { box-shadow: 0 0 16px #fef9c3, 0 0 24px #fde047; }
+      }
   </style>
 <script type="importmap">
 {
@@ -101,6 +121,7 @@
 </head>
 <body class="bg-amber-100">
   <div id="root"></div>
+  <audio id="background-music" loop></audio>
 <script type="module" src="/index.tsx"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-import { Item, Upgrade, UpgradeId } from './types';
+import { Item, Seed, Upgrade, UpgradeId } from './types';
 
-export const SAVE_GAME_KEY = 'priklyucheniya-stepana-save';
+export const SAVE_GAME_KEY = 'priklyucheniya-stepana-save-v2';
 
 export const ITEMS: Item[] = [
   // Мусор
@@ -41,8 +41,16 @@ export const UPGRADES: Record<UpgradeId, Upgrade> = {
     // Anastasia
     EXTRA_ATTEMPT: { id: 'EXTRA_ATTEMPT', name: 'Особое чутьё', description: '+2 попытки в "Найди Стёпу".', cost: 40, type: 'ANASTASIA', icon: '🧐' },
     CLOSER_START: { id: 'CLOSER_START', name: 'Карта местности', description: 'Убирает 2 "холодных" варианта.', cost: 60, type: 'ANASTASIA', icon: '🗺️' },
-    IMPROVE_MOOD: { id: 'IMPROVE_MOOD', name: 'Мороженое для Насти', description: 'Поднимает настроение!', cost: 15, type: 'ANASTASIA', icon: 'https://i.imgur.com/894oVy4.jpeg' },
+    IMPROVE_MOOD: { id: 'IMPROVE_MOOD', name: 'Мороженое', description: 'Поднимает настроение!', cost: 15, type: 'ANASTASIA', icon: 'https://i.imgur.com/894oVy4.jpeg' },
 }
+
+export const SEEDS: Seed[] = [
+    { id: 'carrot', name: 'Морковь', cost: 5, growthTime: 60, revenue: 10, emoji: '🥕' },
+    { id: 'potato', name: 'Картофель', cost: 8, growthTime: 180, revenue: 20, emoji: '🥔' },
+    { id: 'tomato', name: 'Помидор', cost: 12, growthTime: 300, revenue: 35, emoji: '🍅' },
+];
+
+export const INITIAL_FARM_PLOTS_COUNT = 4;
 
 export const BASE_DIG_TIME = 1500;
 export const MUZZLE_DURATION = 3000; // 3 секунды
@@ -51,8 +59,21 @@ export const BOSS_TIMER = 20; // 20 секунд на решение
 
 export const ANASTASIA_MAX_MOOD = 100;
 export const MOOD_BOOST_VALUE = 25;
-
+export const MOOD_DECAY_PER_LEVEL = 5;
 
 // Константы для режима "Найди Стёпу"
 export const FIND_STEPAN_GRID_SIZE = 5;
 export const FIND_STEPAN_ATTEMPTS = 8;
+
+// Константы для режима "Побег из тюрьмы"
+export const PRISON_GRID_SIZE = 6;
+export const PRISON_INITIAL_ENERGY = 25;
+export const PRISON_WALL_STRENGTH = 3;
+export const PRISON_MOVE_COST = 1;
+export const PRISON_BREAK_COST = 2; // Breaking is harder than moving
+export const PRISON_TRAP_PENALTY = 5;
+export const PRISON_WATER_BONUS = 8;
+
+
+// Музыка
+export const BACKGROUND_MUSIC_URL = 'https://assets.mixkit.co/music/preview/mixkit-games-world-124.mp3';

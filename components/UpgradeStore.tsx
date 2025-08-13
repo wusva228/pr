@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Anastasia } from './Anastasia';
-import { ANASTASIA_MAX_MOOD } from '../constants';
-import type { Upgrade, UpgradeId } from '../types';
+import { ANASTASIA_MAX_MOOD, SEEDS } from '../constants';
+import type { Upgrade, UpgradeId, Seed } from '../types';
 
 interface UpgradeStoreProps {
-  onContinue: () => void;
+  onClose: () => void;
   onBuyUpgrade: (upgradeId: UpgradeId) => void;
   coins: number;
   upgrades: Upgrade[];
   purchasedUpgrades: Set<UpgradeId>;
   equippedClothes: Set<UpgradeId>;
   anastasiaMood: number;
+  closeButtonText: string;
 }
 
 const UpgradeCard: React.FC<{
@@ -19,26 +20,35 @@ const UpgradeCard: React.FC<{
     coins: number, 
     isPurchased?: boolean,
     isEquipped?: boolean,
-    isDisabled?: boolean,
-}> = ({ upgrade, onBuy, coins, isPurchased, isEquipped, isDisabled }) => {
+    anastasiaMood: number;
+}> = ({ upgrade, onBuy, coins, isPurchased, isEquipped, anastasiaMood }) => {
     const canAfford = coins >= upgrade.cost;
     
-    let isButtonDisabled = isDisabled || (!isPurchased && !canAfford);
+    let isButtonDisabled = false;
     let buttonText = `${upgrade.cost} 🪙`;
     let buttonClass = "bg-green-600 !border-green-800";
     
     if (upgrade.id === 'IMPROVE_MOOD') {
-        isButtonDisabled = isDisabled || !canAfford;
+        if(anastasiaMood >= ANASTASIA_MAX_MOOD) {
+            buttonText = 'Настроение макс.';
+            isButtonDisabled = true;
+        } else {
+            isButtonDisabled = !canAfford;
+        }
     } else if (isPurchased) {
         if(upgrade.type === 'CLOTHING') {
             buttonText = isEquipped ? 'Снять' : 'Надеть';
             buttonClass = isEquipped ? "bg-yellow-500 !border-yellow-700" : "bg-sky-500 !border-sky-700";
-            isButtonDisabled = false;
         } else {
             buttonText = 'Куплено';
-            buttonClass = "bg-gray-400 !border-gray-600";
             isButtonDisabled = true;
         }
+    } else {
+        isButtonDisabled = !canAfford;
+    }
+
+    if (isButtonDisabled && !(upgrade.type === 'CLOTHING' && isPurchased)) {
+         buttonClass = "bg-gray-400 !border-gray-600";
     }
 
     const cardClass = `flex flex-col sm:flex-row items-center justify-between bg-lime-100/70 p-4 rounded-xl shadow-md transition-all duration-300 ${isPurchased && upgrade.type !== 'CLOTHING' && upgrade.id !== 'IMPROVE_MOOD' ? 'opacity-60 grayscale-[50%]' : ''}`;
@@ -48,7 +58,7 @@ const UpgradeCard: React.FC<{
         <div className={cardClass}>
             <div className="flex items-center gap-4 mb-3 sm:mb-0 text-left w-full">
                 <div className="text-4xl bg-white/50 rounded-lg p-2 shadow-inner flex items-center justify-center w-16 h-16">
-                  {upgrade.icon?.startsWith('http') ? <img src={upgrade.icon} alt={upgrade.name} className={iconClass}/> : upgrade.icon}
+                  {upgrade.icon?.startsWith('http') ? <img src={upgrade.icon} alt={upgrade.name} className={iconClass}/> : <span>{upgrade.icon}</span>}
                 </div>
                 <div className="flex-grow">
                     <h3 className="font-bold text-lg text-lime-900">{upgrade.name}</h3>
@@ -58,7 +68,7 @@ const UpgradeCard: React.FC<{
             <button
                 onClick={onBuy}
                 disabled={isButtonDisabled}
-                className={`btn-3d text-white font-bold py-2 px-5 rounded-lg transition-all duration-200 w-full sm:w-auto shrink-0 ${buttonClass} disabled:bg-gray-400 disabled:!border-gray-600 disabled:cursor-not-allowed`}
+                className={`btn-3d text-white font-bold py-2 px-5 rounded-lg transition-all duration-200 w-full sm:w-auto shrink-0 ${buttonClass} disabled:cursor-not-allowed`}
             >
                 {buttonText}
             </button>
@@ -66,68 +76,99 @@ const UpgradeCard: React.FC<{
     );
 };
 
-export const UpgradeStore: React.FC<UpgradeStoreProps> = ({ onContinue, onBuyUpgrade, coins, upgrades, purchasedUpgrades, equippedClothes, anastasiaMood }) => {
+const SeedCard: React.FC<{ seed: Seed }> = ({ seed }) => {
+    return (
+        <div className="flex items-center justify-between bg-lime-100/70 p-4 rounded-xl shadow-md">
+            <div className="flex items-center gap-4 text-left">
+                <div className="text-4xl bg-white/50 rounded-lg p-2 shadow-inner">{seed.emoji}</div>
+                <div>
+                    <h3 className="font-bold text-lg text-lime-900">{seed.name}</h3>
+                    <p className="text-lime-800 text-sm">
+                        Растёт: {seed.growthTime / 60} мин. Доход: {seed.revenue} 🪙
+                    </p>
+                </div>
+            </div>
+            <div className="text-right">
+                <p className="font-bold text-lg text-amber-800">{seed.cost} 🪙</p>
+                <p className="text-sm text-amber-700">за посадку</p>
+            </div>
+        </div>
+    )
+}
+
+export const UpgradeStore: React.FC<UpgradeStoreProps> = ({ onClose, onBuyUpgrade, coins, upgrades, purchasedUpgrades, equippedClothes, anastasiaMood, closeButtonText }) => {
+  const [activeTab, setActiveTab] = useState<'upgrades' | 'seeds'>('upgrades');
+
   const toolUpgrades = upgrades.filter(u => u.type === 'TOOL');
   const clothingUpgrades = upgrades.filter(u => u.type === 'CLOTHING');
   const anastasiaUpgrades = upgrades.filter(u => u.type === 'ANASTASIA' && u.id !== 'IMPROVE_MOOD');
   const moodUpgrade = upgrades.find(u => u.id === 'IMPROVE_MOOD')!;
   
+  const TabButton: React.FC<{tabId: 'upgrades' | 'seeds', children: React.ReactNode}> = ({tabId, children}) => {
+    const isActive = activeTab === tabId;
+    return (
+        <button onClick={() => setActiveTab(tabId)} className={`px-4 py-2 font-bold rounded-t-lg transition-colors ${isActive ? 'bg-amber-200 text-amber-900' : 'bg-amber-300/50 text-amber-700 hover:bg-amber-300/80'}`}>
+            {children}
+        </button>
+    )
+  }
+
   return (
     <div className="fixed inset-0 bg-amber-100/95 backdrop-blur-sm flex flex-col items-center justify-center z-50 animate-fade-in p-2 sm:p-4">
        <div className="w-full max-w-2xl bg-gradient-to-br from-amber-200 to-yellow-200 p-4 sm:p-6 rounded-3xl shadow-2xl border-4 border-amber-300/50 panel-3d">
-         <div className="text-center mb-6">
+         <div className="text-center mb-4">
             <Anastasia message="Привет! Посмотри, что у меня есть для вас."/>
             <h2 className="text-3xl sm:text-4xl font-black text-amber-900 mt-4 drop-shadow-md">Магазин</h2>
             <p className="text-xl font-bold text-amber-700 mt-2">У тебя {coins} 🪙</p>
          </div>
 
-         <div className="space-y-6 mb-6 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto pr-2 rounded-lg">
-            {/* Anastasia Mood */}
-            <div>
-                <h3 className="text-2xl font-bold text-lime-800 mb-3 ml-1">Порадовать Анастасию</h3>
-                 <UpgradeCard
-                    key={moodUpgrade.id}
-                    upgrade={moodUpgrade}
-                    onBuy={() => onBuyUpgrade(moodUpgrade.id)}
-                    coins={coins}
-                    isDisabled={anastasiaMood >= ANASTASIA_MAX_MOOD}
-                 />
-            </div>
-            {/* Tools */}
-            <div>
-                <h3 className="text-2xl font-bold text-lime-800 mb-3 ml-1">Инструменты</h3>
+         <div className="border-b-4 border-amber-300/80 mb-2">
+            <TabButton tabId="upgrades">Улучшения</TabButton>
+            <TabButton tabId="seeds">Семена</TabButton>
+         </div>
+
+         <div className="space-y-6 mb-6 max-h-[45vh] sm:max-h-[50vh] overflow-y-auto pr-2 rounded-lg">
+            {activeTab === 'upgrades' && (
+                <div className="space-y-6">
+                    <div>
+                        <h3 className="text-xl font-bold text-lime-800 mb-3 ml-1">Порадовать Анастасию</h3>
+                        <UpgradeCard key={moodUpgrade.id} upgrade={moodUpgrade} onBuy={() => onBuyUpgrade(moodUpgrade.id)} coins={coins} anastasiaMood={anastasiaMood} />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-lime-800 mb-3 ml-1">Инструменты</h3>
+                        <div className="space-y-3">
+                            {toolUpgrades.map(upgrade => ( <UpgradeCard key={upgrade.id} upgrade={upgrade} onBuy={() => onBuyUpgrade(upgrade.id)} coins={coins} isPurchased={purchasedUpgrades.has(upgrade.id)} anastasiaMood={anastasiaMood} /> ))}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-lime-800 mb-3 ml-1">Одежда</h3>
+                        <div className="space-y-3">
+                            {clothingUpgrades.map(upgrade => ( <UpgradeCard key={upgrade.id} upgrade={upgrade} onBuy={() => onBuyUpgrade(upgrade.id)} coins={coins} isPurchased={purchasedUpgrades.has(upgrade.id)} isEquipped={equippedClothes.has(upgrade.id)} anastasiaMood={anastasiaMood} /> ))}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-lime-800 mb-3 ml-1">Для "Найди Стёпу"</h3>
+                        <div className="space-y-3">
+                            {anastasiaUpgrades.map(upgrade => ( <UpgradeCard key={upgrade.id} upgrade={upgrade} onBuy={() => onBuyUpgrade(upgrade.id)} coins={coins} isPurchased={purchasedUpgrades.has(upgrade.id)} anastasiaMood={anastasiaMood} /> ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {activeTab === 'seeds' && (
                 <div className="space-y-3">
-                    {toolUpgrades.map(upgrade => (
-                         <UpgradeCard key={upgrade.id} upgrade={upgrade} onBuy={() => onBuyUpgrade(upgrade.id)} coins={coins} isPurchased={purchasedUpgrades.has(upgrade.id)} />
+                    {SEEDS.map(seed => (
+                        <SeedCard key={seed.id} seed={seed} />
                     ))}
                 </div>
-            </div>
-             {/* Clothes */}
-             <div>
-                <h3 className="text-2xl font-bold text-lime-800 mb-3 ml-1">Одежда</h3>
-                <div className="space-y-3">
-                    {clothingUpgrades.map(upgrade => (
-                         <UpgradeCard key={upgrade.id} upgrade={upgrade} onBuy={() => onBuyUpgrade(upgrade.id)} coins={coins} isPurchased={purchasedUpgrades.has(upgrade.id)} isEquipped={equippedClothes.has(upgrade.id)} />
-                    ))}
-                </div>
-            </div>
-            {/* Anastasia */}
-            <div>
-                <h3 className="text-2xl font-bold text-lime-800 mb-3 ml-1">Для "Найди Стёпу"</h3>
-                <div className="space-y-3">
-                    {anastasiaUpgrades.map(upgrade => (
-                         <UpgradeCard key={upgrade.id} upgrade={upgrade} onBuy={() => onBuyUpgrade(upgrade.id)} coins={coins} isPurchased={purchasedUpgrades.has(upgrade.id)} />
-                    ))}
-                </div>
-            </div>
+            )}
          </div>
 
          <div className="text-center mt-4">
              <button
-                onClick={onContinue}
+                onClick={onClose}
                 className="btn-3d text-white font-bold py-3 px-8 rounded-full text-xl !bg-lime-600 !border-lime-800"
              >
-                Продолжить
+                {closeButtonText}
             </button>
          </div>
        </div>

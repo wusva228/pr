@@ -6,18 +6,21 @@ interface StepanProps {
   isDigging: boolean;
   gridSize: number;
   equippedClothes: Set<UpgradeId>;
+  level: number;
 }
 
-export const Stepan: React.FC<StepanProps> = ({ positionIndex, isDigging, gridSize, equippedClothes }) => {
+export const Stepan: React.FC<StepanProps> = ({ positionIndex, isDigging, gridSize, equippedClothes, level }) => {
   const row = Math.floor(positionIndex / gridSize);
   const col = positionIndex % gridSize;
+  const growthFactor = 1 + (level - 1) * 0.02;
 
   const style: React.CSSProperties = {
     top: `calc(${row * (100 / gridSize)}% + 0.25rem)`,
     left: `calc(${col * (100 / gridSize)}% + 0.25rem)`,
     width: `calc(${(100 / gridSize)}% - 0.5rem)`,
     height: `calc(${(100 / gridSize)}% - 0.5rem)`,
-    transition: 'top 0.5s ease-in-out, left 0.5s ease-in-out',
+    transition: 'top 0.5s ease-in-out, left 0.5s ease-in-out, transform 0.5s ease-in-out',
+    transform: `scale(${growthFactor})`
   };
 
   return (

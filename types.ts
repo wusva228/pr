@@ -14,7 +14,7 @@ export interface GridSpot {
   isDug: boolean;
 }
 
-export type GameMode = 'idle' | 'digging_game' | 'find_stepan';
+export type GameMode = 'idle' | 'digging_game' | 'find_stepan' | 'prison_escape' | 'farm';
 
 export type GameStatus = 
   'start_screen' 
@@ -25,7 +25,10 @@ export type GameStatus =
   | 'muzzled' 
   | 'boss_fight'
   | 'find_stepan_playing'
-  | 'find_stepan_end';
+  | 'find_stepan_end'
+  | 'prison_escape_playing'
+  | 'prison_escape_end'
+  | 'farm_playing';
 
 
 export type UpgradeId = 
@@ -34,7 +37,7 @@ export type UpgradeId =
   'EXTRA_ATTEMPT' | 'CLOSER_START' |
   'IMPROVE_MOOD';
   
-export type UpgradeType = 'TOOL' | 'CLOTHING' | 'ANASTASIA';
+export type UpgradeType = 'TOOL' | 'CLOTHING' | 'ANASTASIA' | 'SEED';
 
 export interface Upgrade {
     id: UpgradeId;
@@ -46,18 +49,40 @@ export interface Upgrade {
     icon?: string;
 }
 
+export interface Seed {
+    id: string;
+    name: string;
+    cost: number;
+    growthTime: number; // in seconds
+    revenue: number;
+    emoji: string;
+}
+
+export interface FarmPlotState {
+  id: number;
+  seedId: string | null;
+  plantTime: number | null;
+}
+
 export interface SavedGameState {
   level: number;
   coins: number;
   purchasedUpgrades: UpgradeId[];
   equippedClothes: UpgradeId[];
   anastasiaMood: number;
+  farmPlots?: FarmPlotState[];
 }
 
 export interface FindStepanSpot {
   id: number;
   isSearched: boolean;
   distance: number; // 0 for Stepan's location
+}
+
+export interface PrisonCell {
+  id: number;
+  type: 'wall' | 'floor' | 'exit' | 'trap' | 'water';
+  strength: number;
 }
 
 declare global {
