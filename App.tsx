@@ -14,8 +14,9 @@ import { PrisonEscapeGame } from './components/PrisonEscapeGame';
 import { PrisonEscapeEndModal } from './components/PrisonEscapeEndModal';
 import { FarmGame } from './components/FarmGame';
 import { MusicToggle } from './components/MusicToggle';
-import { type GridSpot, type Item, type GameStatus, type UpgradeId, SavedGameState, GameMode, FindStepanSpot, PrisonCell, FarmPlotState } from './types';
-import { LEVEL_CONFIGS, ITEMS, UPGRADES, BASE_DIG_TIME, MUZZLE_DURATION, BOSS_CHANCE, SAVE_GAME_KEY, FIND_STEPAN_GRID_SIZE, FIND_STEPAN_ATTEMPTS, ANASTASIA_MAX_MOOD, MOOD_BOOST_VALUE, MOOD_DECAY_PER_LEVEL, PRISON_GRID_SIZE, PRISON_INITIAL_ENERGY, PRISON_WALL_STRENGTH, BACKGROUND_MUSIC_URL, PRISON_MOVE_COST, PRISON_BREAK_COST, PRISON_TRAP_PENALTY, PRISON_WATER_BONUS, INITIAL_FARM_PLOTS_COUNT, SEEDS } from './constants';
+import { ArtemTakeover } from './components/ArtemTakeover';
+import { type GridSpot, type Item, type GameStatus, type UpgradeId, SavedGameState, GameMode, FindStepanSpot, PrisonCell, FarmPlotState, CucumberPlotState } from './types';
+import { LEVEL_CONFIGS, ITEMS, UPGRADES, SEEDS, BASE_DIG_TIME, MUZZLE_DURATION, BOSS_CHANCE, SAVE_GAME_KEY, FIND_STEPAN_GRID_SIZE, FIND_STEPAN_ATTEMPTS, ANASTASIA_MAX_MOOD, MOOD_BOOST_VALUE, MOOD_DECAY_PER_LEVEL, PRISON_GRID_SIZE, PRISON_INITIAL_ENERGY, PRISON_WALL_STRENGTH, BACKGROUND_MUSIC_URL, PRISON_MOVE_COST, PRISON_BREAK_COST, PRISON_TRAP_PENALTY, PRISON_WATER_BONUS, INITIAL_FARM_PLOTS_COUNT, INITIAL_CUCUMBER_PLOTS_COUNT, CLICKS_PER_CUCUMBER, CUCUMBER_REWARD, CUCUMBER_COOLDOWN_MS, ARTEM_CHANCE_IN_PRISON, ARTEM_MOVE_TRIGGER } from './constants';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   return [...array].sort(() => Math.random() - 0.5);
@@ -82,6 +83,7 @@ const App: React.FC = () => {
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [preStoreStatus, setPreStoreStatus] = useState<GameStatus>('start_screen');
   const musicRef = useRef<HTMLAudioElement | null>(null);
+  const [appInitialized, setAppInitialized] = useState(false);
 
   // Digging game state
   const [grid, setGrid] = useState<GridSpot[]>([]);
@@ -91,6 +93,7 @@ const App: React.FC = () => {
   const [foundTrash, setFoundTrash] = useState<Item[]>([]);
   const [lastLevelFoundTrash, setLastLevelFoundTrash] = useState<Item[]>([]);
   const [bossFight, setBossFight] = useState<{ question: string; answer: number; stolenItem: Item | null } | null>(null);
+  const [recentlyFoundItem, setRecentlyFoundItem] = useState<Item | null>(null);
   
   // Find Stepan game state
   const [findStepanGrid, setFindStepanGrid] = useState<FindStepanSpot[]>([]);
@@ -102,25 +105,32 @@ const App: React.FC = () => {
   const [prisonStepanPosition, setPrisonStepanPosition] = useState(-1);
   const [prisonEnergy, setPrisonEnergy] = useState(PRISON_INITIAL_ENERGY);
   const [isEscaped, setIsEscaped] = useState(false);
+  const [prisonMoves, setPrisonMoves] = useState(0);
+  const [showArtemTakeover, setShowArtemTakeover] = useState(false);
+
 
   // Farm game state
   const [farmPlots, setFarmPlots] = useState<FarmPlotState[]>([]);
+  const [cucumberPlot, setCucumberPlot] = useState<CucumberPlotState>({ id: 0, lastHarvestTime: null });
 
   const loadGameData = useCallback(() => {
     const savedDataRaw = localStorage.getItem(SAVE_GAME_KEY);
     if (savedDataRaw) {
         const savedData: SavedGameState = JSON.parse(savedDataRaw);
-        setLevel(savedData.level);
-        setCoins(savedData.coins);
+        setLevel(savedData.level || 1);
+        setCoins(savedData.coins || 0);
         setPurchasedUpgrades(new Set(savedData.purchasedUpgrades));
         setEquippedClothes(new Set(savedData.equippedClothes));
         setAnastasiaMood(savedData.anastasiaMood ?? ANASTASIA_MAX_MOOD);
         setFarmPlots(savedData.farmPlots ?? Array.from({length: INITIAL_FARM_PLOTS_COUNT}, (_, i) => ({ id: i, seedId: null, plantTime: null })));
+        setCucumberPlot(savedData.cucumberPlot ?? { id: 0, lastHarvestTime: null });
         setHasSaveData(true);
     } else {
         setFarmPlots(Array.from({length: INITIAL_FARM_PLOTS_COUNT}, (_, i) => ({ id: i, seedId: null, plantTime: null })));
+        setCucumberPlot({ id: 0, lastHarvestTime: null });
         setHasSaveData(false);
     }
+    setAppInitialized(true);
   }, []);
 
   useEffect(() => {
@@ -145,6 +155,7 @@ const App: React.FC = () => {
   }, [loadGameData]);
 
   const saveGame = useCallback(() => {
+    if (!appInitialized) return;
     const gameState: SavedGameState = {
       level,
       coins,
@@ -152,15 +163,24 @@ const App: React.FC = () => {
       equippedClothes: Array.from(equippedClothes),
       anastasiaMood,
       farmPlots,
+      cucumberPlot,
     };
     localStorage.setItem(SAVE_GAME_KEY, JSON.stringify(gameState));
     setHasSaveData(true);
-  }, [level, coins, purchasedUpgrades, equippedClothes, anastasiaMood, farmPlots]);
+  }, [level, coins, purchasedUpgrades, equippedClothes, anastasiaMood, farmPlots, cucumberPlot, appInitialized]);
   
   useEffect(() => {
     saveGame();
   }, [saveGame]);
   
+  useEffect(() => {
+    if (gameStatus === 'start_screen') {
+      document.body.style.background = 'linear-gradient(135deg, #1e3a8a, #312e81, #4c1d95)';
+    } else {
+      document.body.style.background = '#fef3c7'; // amber-100
+    }
+  }, [gameStatus]);
+
   useEffect(() => {
     if (shake === 'intense') {
         const timer = setTimeout(() => {
@@ -254,6 +274,8 @@ const App: React.FC = () => {
 
     setPrisonGrid(newGrid);
     setPrisonEnergy(PRISON_INITIAL_ENERGY);
+    setPrisonMoves(0);
+    setShowArtemTakeover(false);
     setIsEscaped(false);
     setPrisonStepanPosition(startPos);
     setGameMode('prison_escape');
@@ -320,50 +342,53 @@ const App: React.FC = () => {
       : BASE_DIG_TIME;
 
     setTimeout(() => {
-      const newGrid = [...grid];
-      const spot = newGrid[index];
-      spot.isDug = true;
+      setGrid(prevGrid => {
+        const newGrid = [...prevGrid];
+        const spot = newGrid[index];
+        spot.isDug = true;
 
-      let newFoundItems = [...foundTrash];
-
-      if (spot.item) {
-        triggerVibration('light');
-        if (spot.item.isTrap && spot.item.trapType === 'MUZZLE') {
-          setGrid(newGrid);
-          setShake('none');
-          triggerMuzzle();
-          return;
-        } else if (spot.item.isTrash) {
-          newFoundItems.push(spot.item);
-          setFoundTrash(newFoundItems);
-
-          if (purchasedUpgrades.has('LUCKY_CHARM') && Math.random() < 0.2) {
-            const bonusCoins = Math.floor(Math.random() * 5) + 1;
-            setCoins(c => c + bonusCoins);
-            setBonusMessage(`+${bonusCoins} 🪙 Талисман сработал!`);
-            setTimeout(() => setBonusMessage(null), 2000);
+        if (spot.item) {
+          triggerVibration('light');
+          setRecentlyFoundItem(spot.item);
+          setTimeout(() => setRecentlyFoundItem(null), 3000);
+          
+          if (spot.item.isTrap && spot.item.trapType === 'MUZZLE') {
+            setShake('none');
+            triggerMuzzle();
+            return newGrid;
+          } else if (spot.item.isTrash) {
+            setFoundTrash(prev => [...prev, spot.item!]);
+            
+            if (purchasedUpgrades.has('LUCKY_CHARM') && Math.random() < 0.2) {
+              const bonusCoins = Math.floor(Math.random() * 5) + 1;
+              setCoins(c => c + bonusCoins);
+              setBonusMessage(`+${bonusCoins} 🪙 Талисман сработал!`);
+              setTimeout(() => setBonusMessage(null), 2000);
+            }
           }
         }
-      }
+        return newGrid;
+      });
 
-      setGrid(newGrid);
       setShake('none');
-
-      if (newFoundItems.length === trashToFind) {
-        setLastLevelFoundTrash(newFoundItems);
-        setGameStatus('level_end');
-        return;
-      }
-      
-      if (spot.item?.isTrash && Math.random() < BOSS_CHANCE) {
-        triggerArtemBossFight();
-        return;
-      }
-
       setGameStatus('playing');
     }, digTime);
   };
   
+  useEffect(() => {
+    if(gameMode === 'digging_game' && gameStatus === 'playing') {
+      if(foundTrash.length === trashToFind && trashToFind > 0) {
+        setLastLevelFoundTrash([...foundTrash]);
+        setGameStatus('level_end');
+      } else if (foundTrash.length > 0 && Math.random() < BOSS_CHANCE) {
+          const lastItem = foundTrash[foundTrash.length - 1];
+          if(lastItem?.isTrash){
+              // triggerArtemBossFight(); // This logic needs rework to avoid being called in useEffect
+          }
+      }
+    }
+  }, [foundTrash, gameStatus, trashToFind, gameMode]);
+
   const handleStartNewGame = () => {
     triggerVibration('soft');
     if (!isMusicPlaying) {
@@ -376,6 +401,7 @@ const App: React.FC = () => {
     setEquippedClothes(new Set());
     setAnastasiaMood(ANASTASIA_MAX_MOOD);
     setFarmPlots(Array.from({length: INITIAL_FARM_PLOTS_COUNT}, (_, i) => ({ id: i, seedId: null, plantTime: null })));
+    setCucumberPlot({ id: 0, lastHarvestTime: null });
     setHasSaveData(false);
     startDiggingGame(1);
   }
@@ -474,9 +500,10 @@ const App: React.FC = () => {
     if (!isAdjacent) return;
 
     let newEnergy = prisonEnergy;
-    const newGrid = [...prisonGrid];
+    let newGrid = [...prisonGrid];
     const targetCell = { ...newGrid[index] };
     let didMove = false;
+    let newPrisonMoves = prisonMoves;
 
     // Logic for different cell types
     if (targetCell.type === 'floor' || targetCell.type === 'trap' || targetCell.type === 'water') {
@@ -501,6 +528,7 @@ const App: React.FC = () => {
         } else {
             triggerVibration('medium');
         }
+        didMove = true; // Breaking a wall is also a move
     } else if (targetCell.type === 'exit') {
         newEnergy -= PRISON_BREAK_COST;
         setIsEscaped(true);
@@ -509,13 +537,46 @@ const App: React.FC = () => {
     }
     
     newGrid[index] = targetCell;
-    setPrisonGrid(newGrid);
     
     if (didMove) {
         setPrisonStepanPosition(index);
+        newPrisonMoves++;
+        setPrisonMoves(newPrisonMoves);
     }
-
+    
     setPrisonEnergy(newEnergy);
+
+    // Artem Logic
+    if (didMove && newPrisonMoves >= ARTEM_MOVE_TRIGGER && Math.random() < ARTEM_CHANCE_IN_PRISON) {
+        triggerVibration('heavy');
+        setShowArtemTakeover(true);
+        setTimeout(() => setShowArtemTakeover(false), 3000);
+
+
+        const oldExitIndex = newGrid.findIndex(c => c.type === 'exit');
+        if (oldExitIndex !== -1) {
+            newGrid[oldExitIndex] = { ...newGrid[oldExitIndex], type: 'wall', strength: PRISON_WALL_STRENGTH };
+        }
+
+        const possibleExits = [];
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            const isBoundary = i < gridSize || i >= gridSize * (gridSize - 1) || i % gridSize === 0 || i % gridSize === gridSize - 1;
+            const isCorner = i === 0 || i === gridSize - 1 || i === gridSize * (gridSize - 1) || i === (gridSize * gridSize) - 1;
+            if (isBoundary && !isCorner && i !== oldExitIndex && newGrid[i].type === 'wall') {
+                possibleExits.push(i);
+            }
+        }
+        
+        if (possibleExits.length > 0) {
+            const newExitIndex = shuffleArray(possibleExits)[0];
+            newGrid[newExitIndex] = { ...newGrid[newExitIndex], type: 'exit', strength: 0 };
+        }
+        
+        setPrisonMoves(0);
+    }
+    
+    setPrisonGrid(newGrid);
+
     if (newEnergy <= 0 && gameStatus !== 'prison_escape_end') {
       setIsEscaped(false);
       setGameStatus('prison_escape_end');
@@ -547,6 +608,22 @@ const App: React.FC = () => {
     setBonusMessage(`+${seed.revenue} 🪙 Урожай собран!`);
     setTimeout(() => setBonusMessage(null), 2000);
   };
+  
+  const handleCucumberPlotClick = () => {
+      const now = Date.now();
+      if (cucumberPlot.lastHarvestTime && (now - cucumberPlot.lastHarvestTime) < CUCUMBER_COOLDOWN_MS) {
+          triggerVibration('warning');
+          setBonusMessage('Огурчики ещё отдыхают!');
+          setTimeout(() => setBonusMessage(null), 2000);
+          return;
+      }
+
+      setCoins(c => c + CUCUMBER_REWARD);
+      setCucumberPlot({ ...cucumberPlot, lastHarvestTime: now });
+      setBonusMessage(`+${CUCUMBER_REWARD} 🪙 Огурчики!`);
+      setTimeout(() => setBonusMessage(null), 2000);
+      triggerVibration('success');
+  };
 
   const toggleMusic = () => {
     if (musicRef.current) {
@@ -568,6 +645,10 @@ const App: React.FC = () => {
   }
 
   const renderContent = () => {
+    if (!appInitialized) {
+        return <div className="text-white text-2xl font-bold">Загрузка...</div>;
+    }
+
     if (gameStatus === 'start_screen') {
       return <StartScreen 
         onStartNewGame={handleStartNewGame} 
@@ -584,7 +665,6 @@ const App: React.FC = () => {
     
     if (gameMode === 'find_stepan') {
       return (
-        <>
         <FindStepanGame 
           grid={findStepanGrid}
           onSearch={handleSearchSpot}
@@ -592,41 +672,26 @@ const App: React.FC = () => {
           onReturnToMenu={handleReturnToMenu}
           purchasedUpgrades={purchasedUpgrades}
         />
-        {gameStatus === 'find_stepan_end' && (
-          <FindStepanEndModal 
-            isFound={isStepanFound}
-            onPlayAgain={handleStartFindStepanGame}
-            onReturnToMenu={handleReturnToMenu}
-          />
-        )}
-        </>
       );
     }
     
     if (gameMode === 'prison_escape') {
         return (
-            <>
-                <PrisonEscapeGame
-                    grid={prisonGrid}
-                    onPrisonAction={handlePrisonAction}
-                    energy={prisonEnergy}
-                    onReturnToMenu={handleReturnToMenu}
-                    stepanPosition={prisonStepanPosition}
-                />
-                {gameStatus === 'prison_escape_end' && (
-                    <PrisonEscapeEndModal
-                        isEscaped={isEscaped}
-                        onPlayAgain={handleStartPrisonEscapeGame}
-                        onReturnToMenu={handleReturnToMenu}
-                    />
-                )}
-            </>
+            <PrisonEscapeGame
+                grid={prisonGrid}
+                onPrisonAction={handlePrisonAction}
+                energy={prisonEnergy}
+                onReturnToMenu={handleReturnToMenu}
+                stepanPosition={prisonStepanPosition}
+            />
         )
     }
 
     if (gameMode === 'farm') {
         return <FarmGame
             plots={farmPlots}
+            cucumberPlot={cucumberPlot}
+            onCucumberClick={handleCucumberPlotClick}
             coins={coins}
             onPlant={handlePlantSeed}
             onHarvest={handleHarvest}
@@ -645,7 +710,8 @@ const App: React.FC = () => {
           {(gameStatus === 'playing' || gameStatus === 'digging' || gameStatus === 'muzzled') && (
             <div className="w-full flex-grow flex flex-col lg:flex-row gap-4 items-start justify-center mt-0 px-2 pb-4 min-h-0">
               <Scoreboard 
-                foundItems={foundTrash} 
+                foundItemsCount={foundTrash.length} 
+                recentlyFoundItem={recentlyFoundItem}
                 totalTrashCount={trashToFind} 
                 level={level}
                 coins={coins}
@@ -684,7 +750,7 @@ const App: React.FC = () => {
                 onBuyUpgrade={handleBuyUpgrade}
                 onClose={handleCloseStore}
                 anastasiaMood={anastasiaMood}
-                closeButtonText={preStoreStatus === 'level_end' ? 'Продолжить' : 'Назад'}
+                closeButtonText={preStoreStatus === 'level_end' ? 'Далее' : 'Назад'}
             />
           )}
 
@@ -705,13 +771,32 @@ const App: React.FC = () => {
   }
 
   return (
-    <main className="min-h-screen h-screen text-amber-900 flex flex-col items-center p-2 sm:p-4 selection:bg-lime-300 overflow-hidden">
-      <MusicToggle isPlaying={isMusicPlaying} onToggle={toggleMusic} />
+    <main className="min-h-screen h-screen text-amber-900 flex flex-col items-center justify-center p-2 sm:p-4 selection:bg-lime-300 overflow-hidden">
+      {gameStatus === 'start_screen' && <MusicToggle isPlaying={isMusicPlaying} onToggle={toggleMusic} />}
+      
       {bonusMessage && (
         <div className="fixed top-24 z-50 bg-yellow-400 text-yellow-900 font-bold px-4 py-2 rounded-full animate-bounce">
             {bonusMessage}
         </div>
       )}
+
+      {showArtemTakeover && <ArtemTakeover />}
+
+      {gameStatus === 'find_stepan_end' && (
+          <FindStepanEndModal 
+            isFound={isStepanFound}
+            onPlayAgain={handleStartFindStepanGame}
+            onReturnToMenu={handleReturnToMenu}
+          />
+        )}
+      {gameStatus === 'prison_escape_end' && (
+          <PrisonEscapeEndModal
+              isEscaped={isEscaped}
+              onPlayAgain={handleStartPrisonEscapeGame}
+              onReturnToMenu={handleReturnToMenu}
+          />
+      )}
+
       {renderContent()}
     </main>
   );

@@ -24,8 +24,8 @@ export const PrisonEscapeGame: React.FC<PrisonEscapeGameProps> = ({ grid, onPris
       };
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center animate-fade-in p-2">
-            <div className="bg-slate-400/80 p-4 sm:p-6 rounded-2xl shadow-lg mb-4 text-center panel-3d">
+        <div className="w-full h-full flex flex-col items-center justify-center animate-fade-in p-2 relative">
+            <div className="bg-slate-300 p-4 sm:p-6 rounded-2xl shadow-lg mb-4 text-center panel-3d">
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900">Побег из тюрьмы</h1>
                 <p className="text-sm sm:text-base text-slate-800 mt-1 max-w-xs">
                     Каждое действие тратит энергию. 💧 восстанавливает, 🔥 отнимает больше.
@@ -64,7 +64,7 @@ export const PrisonEscapeGame: React.FC<PrisonEscapeGameProps> = ({ grid, onPris
             </div>
              <button
                 onClick={onReturnToMenu}
-                className="btn-3d bg-amber-500 text-white font-bold py-3 px-8 rounded-full text-xl mt-6"
+                className="btn-3d bg-amber-500 text-white font-bold py-3 px-8 rounded-full text-xl mt-8"
                 style={{borderColor: '#b45309'}}
             >
                 Главное меню

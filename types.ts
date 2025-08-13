@@ -64,6 +64,11 @@ export interface FarmPlotState {
   plantTime: number | null;
 }
 
+export interface CucumberPlotState {
+  id: number;
+  lastHarvestTime: number | null;
+}
+
 export interface SavedGameState {
   level: number;
   coins: number;
@@ -71,6 +76,7 @@ export interface SavedGameState {
   equippedClothes: UpgradeId[];
   anastasiaMood: number;
   farmPlots?: FarmPlotState[];
+  cucumberPlot?: CucumberPlotState;
 }
 
 export interface FindStepanSpot {

@@ -13,109 +13,83 @@ interface StartScreenProps {
     coins: number;
 }
 
-const Sparkles: React.FC = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {Array.from({length: 15}).map((_, i) => (
-            <div key={i} className="sparkle" style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                width: `${2 + Math.random() * 4}px`,
-                height: `${2 + Math.random() * 4}px`,
-                animationDelay: `${Math.random() * 1.5}s`,
-                animationDuration: `${1 + Math.random()}s`,
-            }} />
-        ))}
-    </div>
+
+const MenuButton: React.FC<{onClick: () => void, delay: number, children: React.ReactNode, className?: string}> = ({ onClick, delay, children, className }) => (
+    <button
+        onClick={onClick}
+        className={`w-full py-3 rounded-xl text-lg font-bold transition-all duration-300 opacity-0 animate-fade-in-up ${className}`}
+        style={{ animationDelay: `${delay}s` }}
+    >
+        {children}
+    </button>
 );
+
 
 export const StartScreen: React.FC<StartScreenProps> = ({ onStartNewGame, onContinueGame, onStartFindStepanGame, onStartPrisonEscapeGame, onStartFarmGame, onGoToStore, hasSaveData, userName, coins }) => {
     return (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 text-center animate-fade-in bg-amber-50">
-            <Sparkles />
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 text-center">
             <style>{`
-                @keyframes float-up {
+                @keyframes fade-in-up {
                     0% { transform: translateY(20px); opacity: 0; }
                     100% { transform: translateY(0); opacity: 1; }
                 }
-                @keyframes logo-float {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-15px); }
+                .animate-fade-in-up {
+                    animation: fade-in-up 0.6s ease-out forwards;
                 }
             `}</style>
             
-            <div className="relative w-full flex justify-center items-center mb-6">
-                <img 
-                    src="https://i.imgur.com/muWlUqC.png" 
-                    alt="Приключения Степана Лого" 
-                    className="w-48 h-48 sm:w-56 sm:h-56 object-contain drop-shadow-2xl animate-[logo-float_5s_ease-in-out_infinite]"
-                />
-            </div>
+            <div className="w-full max-w-sm p-6 sm:p-8 text-white glass-panel">
+                <div className="flex justify-center items-center mb-4 opacity-0 animate-fade-in-up" style={{animationDelay: '0.1s'}}>
+                    <img 
+                        src="https://i.imgur.com/muWlUqC.png" 
+                        alt="Приключения Степана Лого" 
+                        className="w-28 h-28 sm:w-32 sm:h-32 object-contain drop-shadow-2xl"
+                    />
+                </div>
 
-            <h1 className="text-4xl sm:text-5xl font-black text-amber-900 drop-shadow-lg mb-2 animate-[float-up_0.5s_ease-out_forwards] opacity-0">
-                Приключения <span className="text-lime-700">Степана</span>
-            </h1>
-            
-            {userName && (
-                <p className="text-2xl font-bold text-amber-800 mb-4 animate-[float-up_0.5s_ease-out_0.2s_forwards] opacity-0">
-                    Привет, <span className="text-lime-700">{userName}</span>!
-                </p>
-            )}
-
-            <div className="bg-amber-100/80 p-2 rounded-lg shadow-inner flex items-center justify-center gap-3 mb-6 animate-[float-up_0.5s_ease-out_0.3s_forwards] opacity-0">
-              <span className="text-2xl sm:text-3xl font-bold text-amber-800">{coins}</span>
-              <span className="text-2xl sm:text-3xl drop-shadow-sm">🪙</span>
-            </div>
-
-
-            <div className="grid grid-cols-2 gap-3 w-full max-w-sm px-4">
-                {hasSaveData && (
-                    <button
-                        onClick={onContinueGame}
-                        className="btn-3d text-white font-bold py-3 px-4 rounded-full text-lg w-full animate-[float-up_0.5s_ease-out_0.4s_forwards] opacity-0 col-span-2"
-                        style={{backgroundColor: '#84cc16', borderColor: '#4d7c0f'}}
-                    >
-                        Продолжить
-                    </button>
+                <h1 className="text-3xl sm:text-4xl font-black drop-shadow-lg mb-1 opacity-0 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+                    Приключения Степана
+                </h1>
+                
+                {userName && (
+                    <p className="text-lg font-bold opacity-80 mb-4 opacity-0 animate-fade-in-up" style={{animationDelay: '0.3s'}}>
+                        Привет, {userName}!
+                    </p>
                 )}
-                <button
-                    onClick={onStartNewGame}
-                    className={`btn-3d text-white font-bold py-3 px-4 rounded-full text-lg w-full animate-[float-up_0.5s_ease-out_0.5s_forwards] opacity-0 ${hasSaveData ? 'col-span-1' : 'col-span-2'}`}
-                     style={{backgroundColor: hasSaveData ? '#f59e0b' : '#22c55e', borderColor: hasSaveData ? '#b45309' : '#15803d'}}
-                >
-                    {hasSaveData ? 'Новая игра' : 'Играть'}
-                </button>
-                {hasSaveData && (
-                    <button
-                        onClick={onGoToStore}
-                        className="btn-3d text-white font-bold py-3 px-4 rounded-full text-lg w-full animate-[float-up_0.5s_ease-out_0.5s_forwards] opacity-0 col-span-1"
-                        style={{backgroundColor: '#6366f1', borderColor: '#4338ca'}}
-                    >
-                        Магазин
-                    </button>
-                )}
-                 <button
-                    onClick={onStartFindStepanGame}
-                    className="btn-3d bg-sky-500 text-white font-bold py-3 px-4 rounded-full text-lg w-full animate-[float-up_0.5s_ease-out_0.6s_forwards] opacity-0 col-span-1"
-                    style={{borderColor: '#0369a1'}}
-                >
-                    Найти Стёпу
-                </button>
-                 <button
-                    onClick={onStartPrisonEscapeGame}
-                    className="btn-3d bg-slate-600 text-white font-bold py-3 px-4 rounded-full text-lg w-full animate-[float-up_0.5s_ease-out_0.7s_forwards] opacity-0 col-span-1"
-                    style={{borderColor: '#334155'}}
-                >
-                    Побег
-                </button>
-                 <button
-                    onClick={onStartFarmGame}
-                    className="btn-3d bg-green-500 text-white font-bold py-3 px-4 rounded-full text-lg w-full animate-[float-up_0.5s_ease-out_0.8s_forwards] opacity-0 col-span-2"
-                    style={{borderColor: '#166534'}}
-                >
-                    Ферма
-                </button>
+
+                <div className="bg-black/20 p-2 rounded-lg flex items-center justify-between gap-3 mb-6 opacity-0 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
+                  <button onClick={onGoToStore} className="bg-white/10 hover:bg-white/20 px-4 py-1 rounded-md text-sm font-bold transition-colors">Магазин</button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl sm:text-2xl font-bold">{coins}</span>
+                    <span className="text-xl sm:text-2xl drop-shadow-sm">🪙</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3 w-full">
+                    {hasSaveData && (
+                        <MenuButton onClick={onContinueGame} delay={0.5} className="bg-lime-500 hover:bg-lime-400 text-lime-900">
+                            Продолжить
+                        </MenuButton>
+                    )}
+                    <MenuButton onClick={onStartNewGame} delay={0.6} className="bg-white/80 hover:bg-white text-gray-900">
+                        {hasSaveData ? 'Новая игра' : 'Играть'}
+                    </MenuButton>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <MenuButton onClick={onStartFindStepanGame} delay={0.7} className="bg-sky-500/80 hover:bg-sky-500">
+                            Найти Стёпу
+                        </MenuButton>
+                        <MenuButton onClick={onStartPrisonEscapeGame} delay={0.75} className="bg-slate-600/80 hover:bg-slate-600">
+                            Побег
+                        </MenuButton>
+                    </div>
+
+                    <MenuButton onClick={onStartFarmGame} delay={0.8} className="bg-amber-500/80 hover:bg-amber-500">
+                        Ферма
+                    </MenuButton>
+                </div>
             </div>
-            <p className="absolute bottom-10 text-center text-amber-700/80 font-black text-sm animate-[float-up_0.5s_ease-out_1s_forwards] opacity-0">
+            <p className="absolute bottom-4 text-center text-white/50 font-bold text-sm opacity-0 animate-fade-in-up" style={{ animationDelay: '1s' }}>
                 Сделано с ❤️ для Анастасии и Степана
             </p>
         </div>

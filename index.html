@@ -12,32 +12,40 @@
   <style>
     body {
       font-family: 'Nunito', sans-serif;
-      perspective: 2200px;
-      background-image: radial-gradient(circle at 50% 0%, #fef3c7, #fcd34d);
+      background: linear-gradient(135deg, #1e3a8a, #312e81, #4c1d95);
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      transition: background 0.5s ease-in-out;
     }
     .btn-3d {
         position: relative;
-        background-color: #4ade80; /* lime-400 */
         border: none;
-        border-bottom: 8px solid #166534; /* green-800 */
         transition: all 0.1s ease-in-out;
         text-shadow: 0 2px 2px rgba(0,0,0,0.2);
+        border-bottom: 6px solid;
     }
     .btn-3d:hover {
         transform: translateY(-2px);
-        border-bottom-width: 10px;
+        border-bottom-width: 8px;
     }
     .btn-3d:active, .btn-3d.disabled {
-        transform: translateY(2px);
-        border-bottom-width: 6px;
+        transform: translateY(1px);
+        border-bottom-width: 5px;
         filter: brightness(0.9);
     }
     .panel-3d {
-        box-shadow: 0 20px 40px -8px rgba(0,0,0,0.4), 0 10px 20px rgba(0,0,0,0.25), inset 0 2px 1px rgba(255,255,255,0.4);
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3), 0 8px 10px -6px rgba(0,0,0,0.2);
     }
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
      .particle {
         position: absolute;
         background: #a16207; /* amber-700 */
@@ -87,22 +95,21 @@
         80% { transform: translate(-3px, -3px) rotate(2deg); }
         90% { transform: translate(5px, 6px) rotate(0deg); }
       }
-      .sparkle {
-        position: absolute;
-        background-color: white;
-        border-radius: 50%;
-        animation: sparkle-anim 1.5s infinite;
-        opacity: 0;
-      }
-      @keyframes sparkle-anim {
-        0% { transform: scale(0); opacity: 0.5; }
-        50% { opacity: 1; }
-        100% { transform: scale(1.5); opacity: 0; }
-      }
       .music-btn-on, .music-btn-off {
         animation: fade-in 0.5s;
       }
       @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+      
+      @keyframes fade-in-out {
+        0% { opacity: 0; transform: translateY(10px); }
+        15% { opacity: 1; transform: translateY(0); }
+        85% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-10px); }
+      }
+      .animate-fade-in-out {
+        animation: fade-in-out 3s ease-in-out forwards;
+      }
+
       @keyframes glow {
         0%, 100% { box-shadow: 0 0 8px #fef08a, 0 0 12px #facc15; }
         50% { box-shadow: 0 0 16px #fef9c3, 0 0 24px #fde047; }
@@ -111,15 +118,16 @@
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.1.1",
-    "react/": "https://esm.sh/react@^19.1.1/",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.1/"
+    "react": "https://esm.sh/react@19.1.1",
+    "react-dom/client": "https://esm.sh/react-dom@19.1.1/client",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react/": "https://esm.sh/react@^19.1.1/"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-amber-100">
+<body>
   <div id="root"></div>
   <audio id="background-music" loop></audio>
 <script type="module" src="/index.tsx"></script>

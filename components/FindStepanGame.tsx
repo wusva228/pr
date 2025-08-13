@@ -15,7 +15,7 @@ export const FindStepanGame: React.FC<FindStepanGameProps> = ({ grid, onSearch, 
 
     return (
         <div className="w-full flex flex-col items-center justify-center animate-fade-in">
-            <div className="bg-amber-200/80 p-4 sm:p-6 rounded-2xl shadow-lg mb-6 text-center panel-3d">
+            <div className="bg-amber-200 p-4 sm:p-6 rounded-2xl shadow-lg mb-6 text-center panel-3d">
                 <h1 className="text-2xl sm:text-3xl font-black text-amber-900">Найди Стёпу!</h1>
                 <div className="flex items-center justify-center gap-4 mt-2">
                     <img src="https://i.imgur.com/RGeeZlR.png" alt="Анастасия" className="w-12 h-12 rounded-full border-2 border-white"/>

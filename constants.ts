@@ -1,6 +1,6 @@
 import { Item, Seed, Upgrade, UpgradeId } from './types';
 
-export const SAVE_GAME_KEY = 'priklyucheniya-stepana-save-v2';
+export const SAVE_GAME_KEY = 'priklyucheniya-stepana-save-v3';
 
 export const ITEMS: Item[] = [
   // Мусор
@@ -51,6 +51,10 @@ export const SEEDS: Seed[] = [
 ];
 
 export const INITIAL_FARM_PLOTS_COUNT = 4;
+export const INITIAL_CUCUMBER_PLOTS_COUNT = 1;
+export const CLICKS_PER_CUCUMBER = 10;
+export const CUCUMBER_REWARD = 15;
+export const CUCUMBER_COOLDOWN_MS = 3600 * 1000; // 1 час
 
 export const BASE_DIG_TIME = 1500;
 export const MUZZLE_DURATION = 3000; // 3 секунды
@@ -73,7 +77,9 @@ export const PRISON_MOVE_COST = 1;
 export const PRISON_BREAK_COST = 2; // Breaking is harder than moving
 export const PRISON_TRAP_PENALTY = 5;
 export const PRISON_WATER_BONUS = 8;
+export const ARTEM_CHANCE_IN_PRISON = 0.2; // 20% шанс
+export const ARTEM_MOVE_TRIGGER = 4; // после 4 ходов
 
 
 // Музыка
-export const BACKGROUND_MUSIC_URL = 'https://assets.mixkit.co/music/preview/mixkit-games-world-124.mp3';
+export const BACKGROUND_MUSIC_URL = 'https://cdn.pixabay.com/download/audio/2022/05/18/audio_d247a328f4.mp3';
